@@ -24,7 +24,7 @@ provider:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
     TODOS_TABLE: Todos-dyn-${self:provider.stage}
     TODOS_USER_INDEX: TodosUserIndex
-    IMAGES_S3_BUCKET: serverless-todo-codart7-${self:provider.stage}
+    IMAGES_S3_BUCKET: serverless-todo-aboge-${self:provider.stage}
     SIGNED_URL_EXPIRATION: '300'
 
   iam:
