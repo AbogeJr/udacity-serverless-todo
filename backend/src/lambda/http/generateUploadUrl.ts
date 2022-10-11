@@ -1,28 +1,38 @@
 import 'source-map-support/register'
+import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
+import { getUploadUrl } from '../../helpers/BusinessLogic/todos'
+import { createLogger } from '../../utils/logger';
+import { parseUserId } from '../../auth/utils'
+import { getToken } from '../../auth/utils'
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
-import * as uuid from 'uuid'
-import { generateUploadUrl, updateImageUrl } from '../../businessLogic/todos'
-import { createLogger } from '../../utils/logger'
+const logger = createLogger('GenerateUploadUrl');
 
-const logger = createLogger('generateUploadUrl')
+export const handler: APIGatewayProxyHandler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
+  logger.info('Processing GenerateUploadUrl event...');
+  const todoId = event.pathParameters.todoId;
+  const jwtToken: string = getToken(event);
+  const userId = parseUserId(jwtToken);
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Credentials': true
+  };
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  logger.info('generateUploadUrl event in progress....', event)
-
-  const todoId = event.pathParameters.todoId
-  const imageId = uuid.v4()
-  const uploadUrl = await generateUploadUrl(imageId)
-  await updateImageUrl(todoId, imageId)
-
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': true
-    },
-    body: JSON.stringify({
-      uploadUrl,
-    })
+  try {
+    const signedUrl: string = await getUploadUrl(userId, todoId)
+    logger.info('Successfully created signed url.');
+    return {
+      statusCode: 201,
+      headers,
+      body: JSON.stringify({ uploadUrl: signedUrl })
+    };
+  } catch (error) {
+    logger.error(`Error: ${error.message}`);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error })
+    };
   }
-}
+};

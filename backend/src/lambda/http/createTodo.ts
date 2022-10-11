@@ -1,29 +1,40 @@
 import 'source-map-support/register'
+import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
+import { createTodo } from '../../helpers/BusinessLogic/todos'
+import { createLogger } from '../../utils/logger';
+import { CreateTodoRequest, TodoItem } from '../../models/TodoItem'
+import { parseUserId } from '../../auth/utils'
+import { getToken } from '../../auth/utils'
 
-import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda'
+const logger = createLogger('createTodo');
+    
+export const handler: APIGatewayProxyHandler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
+  logger.info('Processing CreateTodo event...');
+  const jwtToken: string = getToken(event);
+  const userId = parseUserId(jwtToken)
 
-import { createTodo } from '../../businessLogic/todos'
-import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
-import { createLogger } from '../../utils/logger'
-import { getUserId } from '../utils'
+  const newTodoData: CreateTodoRequest = JSON.parse(event.body);
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Credentials': true
+  };
 
-const logger = createLogger('createTodo')
-
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  logger.info('createTodo event in progres....', event)
-
-  const userId = getUserId(event)
-  const newTodo: CreateTodoRequest = JSON.parse(event.body)
-  const newItem = await createTodo(userId, newTodo)
-
-  return {
-    statusCode: 201,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': true
-    },
-    body: JSON.stringify({
-      item: newItem,
-    })
+  try {
+    const newTodo: TodoItem = await createTodo(userId, newTodoData)
+    logger.info('Successfully created a new todo item.');
+    return {
+      statusCode: 201,
+      headers,
+      body: JSON.stringify({ item: newTodo })
+    };
+  } catch (error) {
+    logger.error(`Error: ${error.message}`);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error })
+    };
   }
-}
+};

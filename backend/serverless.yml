@@ -1,5 +1,5 @@
 org: aboge
-app: serverless-todo
+app: aboge-sls
 service: serverless-todo-app
 
 plugins:
