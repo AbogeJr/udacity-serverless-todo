@@ -1,6 +1,7 @@
 org: aboge
 app: aboge-sls
-service: serverless-todo-app
+service:
+  name: serverless-todo-app
 
 plugins:
   - serverless-webpack
