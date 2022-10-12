@@ -1,5 +1,5 @@
 org: aboge
-app: aboge-sls
+app: anton
 service: serverless-todo-app
 
 plugins:
